@@ -1,0 +1,184 @@
+{
+    "Conversation" : "장바구니에 다음의 메뉴를 추가하였습니다."
+    "FunctionCall" : [
+        // 객체 형식에 따라 달라질 수 있음에 유의
+        // 여러 함수를 호출하여야 할 수도 있으므로 배열로 선언
+        // Parameter 매칭을 어떻게 할 것인지는 고민해볼 필요 있음
+        {
+            "Function" : "addMenu",
+            "MenuID" : 8801992856932,
+            "Quantity" : 3,
+            "Option" : "None"
+        }
+    ]
+}
+
+function 종류 :
+	start : 대화를 시작했을 경우의 함수
+	ex) user : "안녕하세요~"
+	assistant : {
+		"Conversation" : "안녕하세요~ 인생치킨에 오신 것을 환영합니다. 무엇을 도와드릴까요?",
+		"FunctionCall" : {
+			"Function" : "start"
+		}
+	}
+	justChat : 액션이 필요하지 않은 대화의 경우의 함수
+	ex) user : "여기에는 무슨 메뉴를 파나요? "
+	assistant : {
+		"Conversation" : "저희 인생치킨은 인생후라이드, 인생양념, 인생간장 치킨이 있습니다! 무엇을 드릴까요?",
+		"FunctionCall" : {
+			"Function" : "justChat"
+		}
+	}
+	user : "아 그러면 후라이드 치킨으로 주세요~"
+	assistant : {
+		"Conversation" : "저희 인생 후라이드 치킨은 18000원이며, 옵션으로 순살 혹은 콤보로 변경시 2000원 추가되며, 맵기 조절이 가능합니다. 맵기는 순하게, 보통, 맵게가 있습니다. 어떻게 하시겠습니까?",
+		"FunctionCall" : {
+			"Function" : "justChat"
+		}		
+	}
+	addMenu : 사용자가 메뉴를 추가해달라고 요청했을 경우의 함수
+	ex) user : "아 그러면 순살로 맵게 해서 주세요"
+	assistant : {
+		"Conversation" : "네, 그러면 인생 후라이드 치킨 순살, 맵게해서 장바구니에 담았습니다. 총 가격은 2만원입니다. 추가로 주문하시겠습니까?",
+		"FunctionCall" : {
+			"Function" : "addMenu",	
+			"MenuID" : "menu001",
+			"Quantity" : 1,
+			"Option" : [ 
+				{ 
+					"optionID" : "opt001",
+					"index" : 1 
+				}, 
+				{
+					"optionID" : "opt002", 
+					"index" : 2 
+				}
+			]
+		}
+	}
+	changeOption : 추가된 메뉴 내에서 옵션 변경을 요청했을 경우의 함수
+	ex) user: "아, 생각해보니까 제 부모님이 매운 걸 못 드시네요... 그냥 순한 맛으로 해주세요"
+	assistant : {
+		"Conversation" : "네, 그러면 맵기를 순한 맛으로 변경해드리겠습니다. 추가로 필요하신게 있으신가요?",
+		"FunctionCall" : {
+			"Function" : "changeOption",
+			"MenuID" : "menu001",
+			"Quantity" : 1
+			"Option" : [ 
+				{ 
+					"optionID" : "opt001",
+					"index" : 1 
+				}, 
+				{
+					"optionID" : "opt002", 
+					"index" : 2 
+				}
+			]
+			"NewOption" : [ 
+				{ 
+					"optionID" : "opt001",
+					"index" : 1 
+				}, 
+				{
+					"optionID" : "opt002", 
+					"index" : 0 
+				}
+			]
+		}
+	}
+	deleteMenu : 추가된 메뉴 중 일부를 삭제 요청했을 경우의 함수
+	ex) user : "아~ 진짜 죄송해요. 후라이드 빼주실래요? 고민 좀 더 해볼게요."
+	assistant : {
+		"Conversation" : "네, 그러면 후라이드 치킨을 제외하겠습니다. 고민 끝나시면 주문 도와드리겠습니다.",
+		"FunctionCall" : {
+			"Function" : "deleteMenu",	
+			"MenuID" : "menu001",	
+			"Quantity" : 1,
+			"Option" : [ 
+				{ 
+					"optionID" : "opt001",
+					"index" : 1 
+				}, 
+				{
+					"optionID" : "opt002", 
+					"index" : 0 
+				}
+			]
+		}
+	}
+	end : 대화가 끝났을 경우의 함수
+	ex) user : "아... 그냥 치킨 안 먹어야겠다. 안녕히 계세요..."
+	assistant : {
+		"Conversation" : "네, 감사합니다. 안녕히 가세요.",	
+		"FunctionCall" : {
+			"Function" : "end"
+		}
+	}
+_________________________________________________________________________
+function 종류 :
+	start : 대화를 시작했을 경우의 함수
+	ex) user : "안녕하세요~"
+	assistant : {{
+		"Conversation" : "안녕하세요~ 인생치킨에 오신 것을 환영합니다. 무엇을 도와드릴까요?",
+		"FunctionCall" : {{
+			"Function" : "start"
+		}}
+	}}
+	justChat : 액션이 필요하지 않은 대화의 경우의 함수
+	ex) user : "여기에는 무슨 메뉴를 파나요? "
+	assistant : {{
+		"Conversation" : "저희 인생치킨은 인생후라이드, 인생양념, 인생간장 치킨이 있습니다! 무엇을 드릴까요?",
+		"FunctionCall" : {{
+			"Function" : "justChat"
+		}}
+	}}
+	user : "아 그러면 후라이드 치킨으로 주세요~"
+	assistant : {{
+		"Conversation" : "저희 인생 후라이드 치킨은 18000원이며, 옵션으로 순살 혹은 콤보로 변경시 2000원 추가되며, 맵기 조절이 가능합니다. 맵기는 순하게, 보통, 맵게가 있습니다. 어떻게 하시겠습니까?",
+		"FunctionCall" : {{
+			"Function" : "justChat"
+		}}		
+	}}
+	addMenu : 사용자가 메뉴를 추가해달라고 요청했을 경우의 함수
+	ex) user : "아 그러면 순살로 맵게 해서 주세요"
+	assistant : {{
+		"Conversation" : "네, 그러면 인생 후라이드 치킨 순살, 맵게해서 장바구니에 담았습니다. 총 가격은 2만원입니다. 추가로 주문하시겠습니까?",
+		"FunctionCall" : {{
+			"Function" : "addMenu",	
+			"MenuID" : "menu001",
+			"Quantity" : 1,
+			"Option" : [ {{ "opt001", 1 }}, {{"opt002", 2 }}]
+		}}
+	}}
+	changeOption : 추가된 메뉴 내에서 옵션 변경을 요청했을 경우의 함수
+	ex) user: "아, 생각해보니까 제 부모님이 매운 걸 못 드시네요... 그냥 순한 맛으로 해주세요"
+	assistant : {{
+		"Conversation" : "네, 그러면 맵기를 순한 맛으로 변경해드리겠습니다. 추가로 필요하신게 있으신가요?",
+		"FunctionCall" : {{
+			"Function" : "changeOption",
+			"MenuID" : "menu001",
+			"Quantity" : 1
+			"Option" : [ {{ "opt001", 1 }}, {{"opt002", 2 }} ],
+			"NewOption" : [ {{ "opt001", 1}}, {{"opt002", 0 }} ]
+		}}
+	}}
+	deleteMenu : 추가된 메뉴 중 일부를 삭제 요청했을 경우의 함수
+	ex) user : "아~ 진짜 죄송해요. 후라이드 빼주실래요? 고민 좀 더 해볼게요."
+	assistant : {{
+		"Conversation" : "네, 그러면 후라이드 치킨을 제외하겠습니다. 고민 끝나시면 주문 도와드리겠습니다.",
+		"FunctionCall" : {{
+			"Function" : "deleteMenu",	
+			"MenuID" : "menu001",	
+			"Quantity" : 1,
+			"Option" : [ {{"opt001", 1}}, {{"opt002", 0 }} ]
+		}}
+	}}
+	end : 대화가 끝났을 경우의 함수
+	ex) user : "아... 그냥 치킨 안 먹어야겠다. 안녕히 계세요..."
+	assistant : {{
+		"Conversation" : "네, 감사합니다. 안녕히 가세요.",	
+		"FunctionCall" : {{
+			"Function" : "end"
+		}}
+	}}

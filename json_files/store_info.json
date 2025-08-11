@@ -1,0 +1,39 @@
+{
+  "store": {
+    "id": "0001",
+    "name": "1년 전통 국밥",
+    "description": "무려 1년 전통의 비법 육수로 끓여낸 순대 국밥! 나도 모르게 소주를 시키게 되버릴 지도 몰라!!",
+    "location": {
+      "address_kr": "경기도 평택시 신장로 55, 1층",
+      "address_en": "55, Sinjang-ro, Pyeongtaek-si, Gyeonggi-do, Republic of Korea",
+      "latitude": 37.081408,
+      "longitude": 127.047182
+    },
+    "contact": {
+      "phone": "031-252-1211",
+      "email": "onegookbap@naver.com"
+    },
+    "business_hours": {
+      "open": "07:00",
+      "last_order": "21:30",
+      "close": "22:00"
+    },
+    "holidays": {
+      "weekly": [
+        "월"
+      ],
+      "special": [
+        "x"
+      ]
+    },
+    "options": {
+      "dine_in": true,
+      "take_out": true,
+      "kiosk_available": true,
+      "multi_language": [
+        "ko",
+        "en"
+      ]
+    }
+  }
+}

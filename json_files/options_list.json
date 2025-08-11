@@ -1,0 +1,72 @@
+{
+  "options": [
+    {
+      "id": "opt001",
+      "name": "국물 양",
+      "type": "single",
+      "choices": [
+        {
+          "label": "국물 양 많이",
+          "price": 1000
+        },
+        {
+          "label": "국물 양 보통",
+          "price": 0
+        },
+        {
+          "label": "국물 양 적게",
+          "price": -1000
+        }
+      ]
+    },
+    {
+      "id": "opt002",
+      "name": "밥",
+      "type": "single",
+      "choices": [
+        {
+          "label": "밥 따로 제공(공기밥)",
+          "price": 0
+        },
+        {
+          "label": "밥 끓여서 제공",
+          "price": 0
+        }
+      ]
+    },
+    {
+      "id": "opt003",
+      "name": "다대기",
+      "type": "single",
+      "choices": [
+        {
+          "label": "다대기 따로 제공",
+          "price": 0
+        },
+        {
+          "label": "다대기 끓여서 제공",
+          "price": 0
+        }
+      ]
+    },
+    {
+      "id": "opt004",
+      "name": "요리",
+      "type": "single",
+      "choices": [
+        {
+          "label": "대자",
+          "price": 10000
+        },
+        {
+          "label": "중자",
+          "price": 5000
+        },
+        {
+          "label": "소자",
+          "price": 0
+        }
+      ]
+    }
+  ]
+}
