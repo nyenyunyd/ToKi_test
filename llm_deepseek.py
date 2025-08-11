@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 import os
 import re
 import json
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+
 
 dotenv_path = r"C:\Users\nyeny\Desktop\학교\오픈SW\Projects\api_key.env"
 
@@ -28,7 +31,7 @@ class KioskAI:
             load_dotenv()
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.client = openai.OpenAI(api_key=self.api_key)
-        self.conversation_history = []
+        self.conversation_history = ""
 
     def get_store_summary(self, store_json: str) -> str:
         '''
@@ -86,20 +89,15 @@ class KioskAI:
         - 첫 대화 시 매장/메뉴/옵션 요약과 지침 메시지(system role) 포함
         - 이후 대화는 기존 히스토리와 현재 사용자 입력 추가
         '''
-        system_msg = {
-            "role": "system",
-            "content": "당신은 매장 키오스크에 탑재된 AI입니다. 아래 매장, 메뉴, 옵션 정보, 지침과 데이터 및 대화 이력을 참고하여 자연스럽게 응답하세요."
-        }
 
         # 초기 데이터 제공은 첫 대화일 때만
         if not self.conversation_history:
             store_summary = self.get_store_summary(store_data)
             menu_summary = self.get_menu_summary(menu_data)
             option_summary = self.get_option_summary(option_data)
-            intro_msg = {
-                "role": "system",
-                "content": f"""
+            intro_msg = f"""
 
+        당신은 매장 키오스크에 탑재된 AI입니다. 아래 매장, 메뉴, 옵션 정보, 지침과 데이터 및 대화 이력을 참고하여 자연스럽게 응답하세요.
                     {store_summary}
 
                     {menu_summary}
@@ -241,13 +239,12 @@ class KioskAI:
         			"Function" : "end"
         		}}
         	}}
-
                     """
-            }
-            self.conversation_history.append(intro_msg)
 
-        self.conversation_history.append({"role": "user", "content": user_input})
-        return [system_msg] + self.conversation_history
+            self.conversation_history+=intro_msg
+
+        self.conversation_history += f"\n사용자: {user_input}\nAI: "
+        return self.conversation_history
 
     def extract_json_from_response(self, md_text):
         '''
@@ -266,10 +263,12 @@ class KioskAI:
             return match.group(1)
         return md_text
 
+
+
     def input_text_to_ai(self, user_input, store_data, menu_data, option_data):
         '''
         사용자 메시지를 받아 최종 메시지 배열 생성 후
-        OpenAI API에 요청하여 응답받고,
+        DeepSeek AI Model 에 요청하여 응답받고,
         응답 내 JSON 부분을 추출하여 반환
 
         Args:
@@ -281,18 +280,54 @@ class KioskAI:
         Returns:
             str: OpenAI 응답 내 JSON 문자열
         '''
-        messages = self.prepare_chat_messages(user_input, store_data, menu_data, option_data)
-        response = self.client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            temperature=0.3
-        )
-        response_dict = response.model_dump()
-        assistant_response = response_dict['choices'][0]['message']['content']
-        self.conversation_history.append({"role": "assistant", "content": assistant_response})
+        # 모델에 넘길 최종 프롬프트 생성 (긴 문자열)
+        prompt = self.prepare_chat_messages(user_input, store_data, menu_data, option_data)
+
+        # 토크나이저에 문자열 전달
+        input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
+
+        # 역전파 계산 X, 학습이 아닌 추론(생성)이므로 제외함으로써 속도 증가
+        # 입력 토큰을 통해 텍스트 생성
+        # input_ids: 모델에 넣을 입력 토큰(문장 토큰화 결과)
+        # max_new_tokens=200: 새로 생성할 최대 토큰 수 (즉, 응답 길이 제한)
+        # temperature=0.8: 생성 텍스트의 다양성을 조절 낮을수록 더 결정적이고 예측 가능한 답변 높을수록 더 창의적이고 다양한 답변
+        # top_p=0.95: 누적 확률이 95%가 될 때까지 후보군에서 샘플링(누적 확률 샘플링) 다양성을 유지하면서도 이상한 답변을 줄이기 위한 기법
+        # do_sample=True: 확률 기반 샘플링을 하겠다는 의미 (아니면 무조건 확률 1위 선택)
+
+        with torch.no_grad():
+            output = model.generate(
+                input_ids,
+                max_new_tokens=200,
+                temperature=0.8,
+                top_p=0.95,
+                do_sample=True
+            )
+
+        # 사용자 입력(prompt) 제외 후, AI 답변 부분만 추출
+        assistant_response = tokenizer.decode(output[0], skip_special_tokens=True)
+
+        # 7) 대화 히스토리 업데이트
+        self.conversation_history+=assistant_response
+
         return self.extract_json_from_response(assistant_response)
+
+    def load_model(self):
+        model_name = "deepseek-ai/deepseek-llm-7b-instruct"
+        print(f"모델 로딩 중: {model_name} ...")
+
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            device_map="auto",  # GPU 자동 할당
+            torch_dtype=torch.float16,
+            trust_remote_code=True
+        )
+
+        print("✅ 모델 로딩 완료.")
+        return tokenizer, model
 
 
 # 모듈 테스트
 if __name__ == "__main__":
-    None    
+    ai = KioskAI()
+    tokenizer, model = ai.load_model()

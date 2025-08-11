@@ -1,7 +1,6 @@
-from llm import KioskLLM
-import shop_cart as sc
+from llm import KioskAI
 import db_connect as db
-from shop_cart import ShoppingList
+from shop_list import ShoppingList
 import result_parser as parser
 
 '''
@@ -12,13 +11,13 @@ stt, tts, db 통합 전 테스트용 메인 실행 코드입니다.
 '''
 
 cart = ShoppingList()  # 장바구니 객체 초기화
-llm_obj = KioskLLM()  # LLM 대화 처리 객체 생성
+llm_obj = KioskAI()  # LLM 대화 처리 객체 생성
 
 while True:
     # 사용자로부터 채팅 텍스트 입력 받음
-    text = input("채팅 입력 : ")
+    user_input = input("채팅 입력 : ")
 
-    if text == "quit":
+    if user_input == "quit":
         # 'quit' 입력 시 루프 종료 (프로그램 종료)
         break
 
@@ -34,25 +33,25 @@ while True:
     '''
 
     # LLM에 사용자 입력 및 DB 데이터(매장, 메뉴, 옵션) 전달, 응답 결과 수신
-    result = llm_obj.input_text_to_ai(
-        text,
+    llm_response = llm_obj.input_text_to_ai(
+        user_input,
         db.get_info_of_store(),
         db.get_info_of_menu(),
         db.get_info_of_option()
     )
 
     # LLM 응답에서 대화 내용과 호출 함수 정보 파싱
-    context, functions = parser.function_of_result(result)
+    conversation_text, function_calls = parser.parse_llm_response(llm_response)
 
     # 사용자에게 출력할 대화 내용 출력
-    print(context)
+    print(conversation_text)
 
     # 함수 호출 정보를 바탕으로 장바구니 상태 변경 수행
-    for func in functions:
-        function_name = func["Function"]
-        menu_id = func.get("MenuID")
-        quantity = func.get("Quantity")
-        option = func.get("Option")
+    for function in function_calls:
+        function_name = function["Function"]
+        menu_id = function.get("MenuID")
+        quantity = function.get("Quantity")
+        option = function.get("Option")
 
         if function_name == "start":
             # 대화 시작 시 새로운 장바구니 생성 (초기화)
@@ -62,7 +61,7 @@ while True:
             cart.add(menu_id, quantity, option)
         elif function_name == "changeOption":
             # 옵션 변경 요청 시 해당 메뉴 옵션 수정
-            newOption = func.get("NewOption")
+            newOption = function.get("NewOption")
             cart.changeOption(menu_id, option, newOption)
         elif function_name == "deleteMenu":
             # 메뉴 삭제 요청 시 장바구니에서 해당 메뉴 제거
