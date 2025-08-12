@@ -1,6 +1,3 @@
-import openai
-from dotenv import load_dotenv
-import os
 import re
 import json
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -12,7 +9,7 @@ dotenv_path = r"C:\Users\nyeny\Desktop\학교\오픈SW\Projects\api_key.env"
 class KioskAI:
     '''
      키오스크 AI LLM 클래스
-     - OpenAI API 연동 및 대화 히스토리 관리
+     - DeepSeek 모델 로딩 및 대화 히스토리 관리
      - 매장, 메뉴, 옵션 데이터 요약 함수 포함
      - 사용자 입력에 따라 LLM 질의 메시지 생성 및 응답 처리
      '''
@@ -20,18 +17,26 @@ class KioskAI:
     def __init__(self, dotenv_path=None):
         '''
         초기화
-        - .env 파일에서 OPENAI_API_KEY 로드
-        - OpenAI 클라이언트 초기화
         - 대화 이력 리스트 초기화
         '''
-
-        if dotenv_path:
-            load_dotenv(dotenv_path=dotenv_path)
-        else:
-            load_dotenv()
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        self.client = openai.OpenAI(api_key=self.api_key)
         self.conversation_history = ""
+        self.tokenizer, self.model = self.load_model()
+
+    def load_model(self):
+        model_name = "deepseek-ai/deepseek-llm-7b-instruct"
+        print(f"모델 로딩 중: {model_name} ...")
+        model_path = "C:/Users/nyeny/Downloads/"  # ✅ 로컬 경로 지정
+
+        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            device_map="auto",  # GPU 자동 할당
+            torch_dtype=torch.float16,
+            trust_remote_code=True
+        )
+
+        print("✅ 모델 로딩 완료.")
+        return tokenizer, model
 
     def get_store_summary(self, store_json: str) -> str:
         '''
@@ -263,8 +268,6 @@ class KioskAI:
             return match.group(1)
         return md_text
 
-
-
     def input_text_to_ai(self, user_input, store_data, menu_data, option_data):
         '''
         사용자 메시지를 받아 최종 메시지 배열 생성 후
@@ -282,9 +285,8 @@ class KioskAI:
         '''
         # 모델에 넘길 최종 프롬프트 생성 (긴 문자열)
         prompt = self.prepare_chat_messages(user_input, store_data, menu_data, option_data)
-
-        # 토크나이저에 문자열 전달
-        input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(model.device)
+        # 토크나이저에 문자열 전달,토큰별로 나누고, 딕셔너리로 반환하지만 pt의 경우 pytorch 텐서로 반환
+        input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids.to(self.model.device)
 
         # 역전파 계산 X, 학습이 아닌 추론(생성)이므로 제외함으로써 속도 증가
         # 입력 토큰을 통해 텍스트 생성
@@ -295,37 +297,27 @@ class KioskAI:
         # do_sample=True: 확률 기반 샘플링을 하겠다는 의미 (아니면 무조건 확률 1위 선택)
 
         with torch.no_grad():
-            output = model.generate(
+            output = self.model.generate(
                 input_ids,
                 max_new_tokens=200,
                 temperature=0.8,
                 top_p=0.95,
                 do_sample=True
             )
+        # 사용자 입력 토큰의 길이를 구합니다.
+        input_len = input_ids.shape[1]
+        # output[0]는 [사용자 입력 토큰 + AI 응답 토큰] 전체 시퀀스입니다.
+        # 따라서 input_len 이후의 토큰들만 슬라이싱하여 AI 답변 부분만 추출합니다.
+        # tolist()는 Tensor를 파이썬 리스트로 변환하는 메서드
 
+        response_tokens = output[0][input_len:].tolist()
         # 사용자 입력(prompt) 제외 후, AI 답변 부분만 추출
-        assistant_response = tokenizer.decode(output[0], skip_special_tokens=True)
+        assistant_response = self.tokenizer.decode(response_tokens, skip_special_tokens=True)
 
         # 7) 대화 히스토리 업데이트
         self.conversation_history+=assistant_response
-
+        print(assistant_response)
         return self.extract_json_from_response(assistant_response)
-
-    def load_model(self):
-        model_name = "deepseek-ai/deepseek-llm-7b-instruct"
-        print(f"모델 로딩 중: {model_name} ...")
-
-        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            device_map="auto",  # GPU 자동 할당
-            torch_dtype=torch.float16,
-            trust_remote_code=True
-        )
-
-        print("✅ 모델 로딩 완료.")
-        return tokenizer, model
-
 
 # 모듈 테스트
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from llm import KioskAI
+from llm_deepseek import KioskAI
 import db_connect as db
 from shop_list import ShoppingList
 import result_parser as parser

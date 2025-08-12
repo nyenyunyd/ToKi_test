@@ -104,6 +104,7 @@ def insert_option_info():
     # 옵션 문서로 변환 후 저장
     for opt in options_json["options"]:
         option_doc = {
+            "option_id": opt["id"],
             "name": opt["name"],
             "type": opt.get("type", "single"),
             "choices": opt.get("choices", [])
@@ -204,3 +205,7 @@ def insert_menu_info():
         }
         menus_col.insert_one(menu_doc)
         print(f"Inserted menu: {menu_doc['menu_id']}")
+
+
+insert_option_info()
+insert_menu_info()
